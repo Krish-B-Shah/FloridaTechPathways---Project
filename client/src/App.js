@@ -1,10 +1,13 @@
+// src/App.js
 import React, { useState, useEffect } from 'react';
+import SignUp from './components/SignUp';
 import InternshipGrid from './components/InternshipGrid';
 import DetailedView from './components/DetailedView';
 import AddInternshipModal from './components/AddInternshipModal';
 import Navbar from './components/Navbar';
+import './App.css';
 
-// Sample initial data - in a real app, this would come from an API or local storage
+// Sample initial data
 const initialInternships = [
   {
     id: 1,
@@ -57,154 +60,112 @@ const initialInternships = [
 ];
 
 function App() {
-  // State management
+  const [isSignedUp, setIsSignedUp] = useState(false);
   const [internships, setInternships] = useState(() => {
     try {
-      // Try to load from localStorage first
-      const savedInternships = localStorage.getItem('internships');
-      
-      if (savedInternships) {
-        // Parse saved data
-        const parsedData = JSON.parse(savedInternships);
-        
-        // Check if we need to migrate old data format to new format
-        const migratedData = parsedData.map(internship => {
-          const newInternship = { ...internship };
-          
-          // If we have old field names but not new ones, migrate the data
-          if ((internship.startDate || internship.endDate) && 
-              (!internship.dateApplied || !internship.deadline)) {
-            newInternship.dateApplied = internship.startDate;
-            newInternship.deadline = internship.endDate;
-          }
-          
-          return newInternship;
-        });
-        
-        return migratedData;
+      const saved = localStorage.getItem('internships');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.map(i => ({
+          ...i,
+          dateApplied: i.dateApplied || i.startDate,
+          deadline: i.deadline || i.endDate,
+        }));
       }
-      
       return initialInternships;
-    } catch (error) {
-      console.error("Error loading internships from localStorage:", error);
+    } catch (err) {
+      console.error("Error loading internships:", err);
       return initialInternships;
     }
   });
-  
+
   const [selectedInternship, setSelectedInternship] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  // Save to localStorage whenever internships change
   useEffect(() => {
     localStorage.setItem('internships', JSON.stringify(internships));
   }, [internships]);
 
-  // Handler for selecting an internship to view details
   const handleSelectInternship = (internship) => {
     setSelectedInternship(internship);
-    // Scroll to top to show the detailed view
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Handler for adding a new internship
   const handleAddInternship = (newInternship) => {
-    const newId = internships.length > 0 
-      ? Math.max(...internships.map(i => i.id)) + 1 
-      : 1;
-    
-    // Process the logo file if it exists
-    let logoUrl = '/internship.png'; // Default image
-    
+    const newId = internships.length ? Math.max(...internships.map(i => i.id)) + 1 : 1;
+    let logoUrl = '/internship.png';
+
     if (newInternship.logoUrl) {
-      // In a real app, you would upload this to a server and get back a URL
-      // For this demo, we'll use the FileReader result directly
-      // In production, you'd want to store the file somewhere and use a permanent URL
       try {
         const reader = new FileReader();
         reader.readAsDataURL(newInternship.logoUrl);
         reader.onloadend = () => {
-          const base64data = reader.result;
-          
-          // Create updated internship with the image data
           const internshipWithImage = {
             ...newInternship,
             id: newId,
-            logoUrl: base64data,
+            logoUrl: reader.result,
           };
-          
-          // Update state with the image
-          setInternships(prevInternships => [...prevInternships, internshipWithImage]);
-          
-          // If this is the first internship added, select it
-          if (internships.length === 0) {
-            setSelectedInternship(internshipWithImage);
-          }
+          setInternships(prev => [...prev, internshipWithImage]);
+          if (!internships.length) setSelectedInternship(internshipWithImage);
         };
-      } catch (error) {
-        console.error("Error processing image:", error);
-        // Continue with default image if there's an error
-        const internshipWithId = {
+      } catch (err) {
+        console.error("Error with image:", err);
+        setInternships(prev => [...prev, {
           ...newInternship,
           id: newId,
-          logoUrl: logoUrl, // Default image
-        };
-        
-        setInternships(prevInternships => [...prevInternships, internshipWithId]);
+          logoUrl
+        }]);
       }
     } else {
-      // No custom image, use default
       const internshipWithId = {
         ...newInternship,
         id: newId,
-        logoUrl: logoUrl, // Default image
+        logoUrl
       };
-      
-      setInternships([...internships, internshipWithId]);
+      setInternships(prev => [...prev, internshipWithId]);
       setSelectedInternship(internshipWithId);
     }
-    
+
     setIsAddModalOpen(false);
   };
-  
-  // Handler for updating internship progress
-  const handleUpdateProgress = (internshipId, newProgress) => {
-    const updatedInternships = internships.map(internship => 
-      internship.id === internshipId 
-        ? { ...internship, progress: newProgress } 
-        : internship
+
+  const handleUpdateProgress = (id, newProgress) => {
+    const updated = internships.map(i =>
+      i.id === id ? { ...i, progress: newProgress } : i
     );
-    
-    setInternships(updatedInternships);
-    
-    // Update the selected internship if it's the one being modified
-    if (selectedInternship && selectedInternship.id === internshipId) {
+    setInternships(updated);
+    if (selectedInternship?.id === id) {
       setSelectedInternship({ ...selectedInternship, progress: newProgress });
     }
   };
 
+  if (!isSignedUp) {
+    return <SignUp onSubmit={() => setIsSignedUp(true)} />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       <Navbar onOpenAddModal={() => setIsAddModalOpen(true)} />
-      
+
       {selectedInternship && (
-        <DetailedView 
-          internship={selectedInternship} 
-          onClose={() => setSelectedInternship(null)} 
+        <DetailedView
+          internship={selectedInternship}
+          onClose={() => setSelectedInternship(null)}
           onUpdateProgress={handleUpdateProgress}
         />
       )}
-      
+
       <div className="container mx-auto px-4 py-8">
-        <InternshipGrid 
-          internships={internships} 
-          onSelectInternship={handleSelectInternship} 
+        <InternshipGrid
+          internships={internships}
+          onSelectInternship={handleSelectInternship}
         />
       </div>
-      
+
       {isAddModalOpen && (
-        <AddInternshipModal 
-          onClose={() => setIsAddModalOpen(false)} 
-          onAddInternship={handleAddInternship} 
+        <AddInternshipModal
+          onClose={() => setIsAddModalOpen(false)}
+          onAddInternship={handleAddInternship}
         />
       )}
     </div>
