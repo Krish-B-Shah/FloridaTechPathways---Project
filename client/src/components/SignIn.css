@@ -1,161 +1,65 @@
-/* SignIn.css */
-:root {
-    --primary-color: #4f46e5;
-    --primary-dark: #4338ca;
-    --primary-light: #e0e7ff;
-    --success-color: #10b981;
-    --error-color: #ef4444;
-    --text-primary: #1f2937;
-    --text-secondary: #6b7280;
-    --background-light: #f9fafb;
-    --card-bg: #ffffff;
-    --border-color: #e5e7eb;
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    --animation-speed: 0.3s;
-  }
-  
-  /* Background with soft gradient */
-  .sign-in-container {
+/* src/Components/SignIn.css */
+
+.sign-in-container {
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background: linear-gradient(135deg, #f6f9fc, #edf2f7);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    padding: 20px;
+    background: linear-gradient(135deg, #edf2f7, #e0e7ff);
   }
   
-  /* Card styling */
   .sign-in-card {
-    width: 100%;
-    max-width: 460px;
-    background-color: var(--card-bg);
-    border-radius: 16px;
-    box-shadow: var(--shadow-lg);
-    padding: 40px;
-    position: relative;
-    transition: transform var(--animation-speed), box-shadow var(--animation-speed);
-    border: 1px solid var(--border-color);
-  }
-  
-  .sign-in-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  }
-  
-  /* Decorative element - top bar */
-  .sign-in-card::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 6px;
-    background: linear-gradient(90deg, var(--primary-color), #8b5cf6, #ec4899);
-    border-radius: 16px 16px 0 0;
-  }
-  
-  /* Header Styling */
-  h2 {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     text-align: center;
-    margin-bottom: 32px;
-    color: var(--text-primary);
-    font-weight: 700;
-    font-size: 1.9rem;
-    letter-spacing: 1px;
-    text-transform: uppercase;
+    width: 400px;
   }
   
-  /* Input styling */
-  .input-group {
+  h2 {
+    color: #4f46e5;
     margin-bottom: 20px;
   }
   
   .input-group label {
-    color: var(--text-secondary);
-    font-size: 0.875rem;
-    margin-bottom: 8px;
-    font-weight: 600;
+    display: block;
+    margin-bottom: 5px;
+    color: #4a5568;
   }
   
   .input-group input {
     width: 100%;
-    padding: 14px 18px;
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-    font-size: 1rem;
-    background-color: #fafafa;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-  }
-  
-  .input-group input:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
-    outline: none;
-  }
-  
-  /* Button styling */
-  .button-container {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
   }
   
   .sign-in-button {
-    background-color: var(--primary-color);
+    background-color: #4f46e5;
     color: white;
-    font-weight: 600;
-    padding: 16px;
+    padding: 10px 15px;
     border: none;
-    border-radius: 12px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 1.1rem;
-    transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+    font-size: 1rem;
+    margin-top: 10px;
+    transition: background-color 0.3s;
   }
   
   .sign-in-button:hover {
-    background-color: var(--primary-dark);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    background-color: #4338ca;
   }
   
-  .sign-in-button:active {
-    transform: translateY(1px);
-    box-shadow: none;
+  .redirect {
+    margin-top: 15px;
+    font-size: 0.9rem;
   }
   
-  /* Sign-up link */
-  .sign-up-link {
-    text-align: center;
-    margin-top: 24px;
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-  }
-  
-  .sign-up-link a {
-    color: var(--primary-color);
-    text-decoration: none;
-    font-weight: 600;
-  }
-  
-  .sign-up-link a:hover {
+  .redirect a {
+    color: #4f46e5;
     text-decoration: underline;
-  }
-  
-  /* Responsive adjustments */
-  @media (max-width: 600px) {
-    .sign-in-card {
-      padding: 20px;
-    }
-  
-    h2 {
-      font-size: 1.5rem;
-    }
-  
-    .sign-in-button {
-      padding: 14px;
-    }
+    cursor: pointer;
   }
   
