@@ -11,6 +11,9 @@ const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date');
+  const [showDeadlineFields, setShowDeadlineFields] = useState(false);
+  const [deadline, setDeadline] = useState('');
+  const [wantsReminder, setWantsReminder] = useState(false);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -19,7 +22,7 @@ const Dashboard = () => {
     location: '',
     startDate: '',
     duration: '',
-    status: 'applied',
+    status: 'all',
     notes: ''
   });
 
@@ -43,7 +46,7 @@ const Dashboard = () => {
       location: '',
       startDate: '',
       duration: '',
-      status: 'applied',
+      status: 'all',
       notes: ''
     });
     setIsModalOpen(true);
@@ -65,14 +68,27 @@ const Dashboard = () => {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    const { name, value, type, checked } = e.target;
+    
+    if (name === 'progress') {
+      if (value === 'Planning to Apply' || value === 'Applying') {
+        setShowDeadlineFields(true);
+      } else {
+        setShowDeadlineFields(false);
+        setDeadline('');       // Clear deadline if progress changes
+        setWantsReminder(false);
+      }
+    }
+  
+    setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
   };
 
   const handleAddInternship = () => {
     if (formData.title.trim() && formData.company.trim()) {
       const newInternship = {
         ...formData,
+        deadline: deadline || null,
+        wantsReminder: wantsReminder,
         createdAt: new Date().toISOString()
       };
       setInternships([...internships, newInternship]);
@@ -126,16 +142,20 @@ const Dashboard = () => {
   // Status badge component
   const StatusBadge = ({ status }) => {
     const statusStyles = {
+      planning_To_Apply: "bg-gray-50 text-gray-800",
+      applying: "bg-blue-50 text-blue-800",
       applied: "bg-blue-100 text-blue-800",
-      interviewing: "bg-purple-100 text-purple-800",
-      offered: "bg-green-100 text-green-800",
-      rejected: "bg-red-100 text-red-800",
-      accepted: "bg-emerald-100 text-emerald-800"
+      online_Assessment: "bg-purple-50 text-purple-800",
+      phone_Call: "bg-purple-50 text-purple-800",
+      interviewing: "bg-yellow-50 text-yellow-800",
+      offered: "bg-green-50 text-green-800",
+      rejected: "bg-red-50 text-red-800",
+      accepted: "bg-green-100 text-green-900"
     };
     
     return (
       <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusStyles[status] || "bg-gray-100 text-gray-800"}`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
       </span>
     );
   };
@@ -180,12 +200,16 @@ const Dashboard = () => {
                 onChange={(e) => setFilter(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="all">All Statuses</option>
-                <option value="applied">Applied</option>
-                <option value="interviewing">Interviewing</option>
-                <option value="offered">Offered</option>
-                <option value="accepted">Accepted</option>
-                <option value="rejected">Rejected</option>
+                <option value="All Statuses">All Statuses</option>
+                <option value = "Planning to Apply">Planning to Apply</option>
+                <option value = "Applying">Applying</option>
+                <option value="Applied">Applied</option>
+                <option value = "Phone Call">Phone Call</option>
+                <option value = "Online Assessment">Online Assessment</option>
+                <option value="Interviewing">Interviewing</option>
+                <option value="Offered">Offered</option>
+                <option value="Accepted">Accepted</option>
+                <option value="Rejected">Rejected</option>
               </select>
               
               <select 
@@ -361,7 +385,12 @@ const Dashboard = () => {
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
+                <option value="all">All Statuses</option>
+                <option value = "planningtoapply">Planning to Apply</option>
+                <option value = "applying">Applying</option>
                 <option value="applied">Applied</option>
+                <option value = "phonecall">Phone Call</option>
+                <option value = "oa">Online Assessment</option>
                 <option value="interviewing">Interviewing</option>
                 <option value="offered">Offered</option>
                 <option value="accepted">Accepted</option>
@@ -472,7 +501,12 @@ const Dashboard = () => {
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
+                <option value="all">All Statuses</option>
+                <option value = "planningtoapply">Planning to Apply</option>
+                <option value = "applying">Applying</option>
                 <option value="applied">Applied</option>
+                <option value = "phonecall">Phone Call</option>
+                <option value = "oa">Online Assessment</option>
                 <option value="interviewing">Interviewing</option>
                 <option value="offered">Offered</option>
                 <option value="accepted">Accepted</option>

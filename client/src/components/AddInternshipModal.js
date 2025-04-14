@@ -8,7 +8,7 @@ const AddInternshipModal = ({ onClose, onAddInternship }) => {
     pay: '',
     dateApplied: '',
     deadline: '',
-    progress: 'Applied',
+    progress: 'All Statuses',
     notes: '',
     logoUrl: null
   });
@@ -16,15 +16,26 @@ const AddInternshipModal = ({ onClose, onAddInternship }) => {
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
   const [errors, setErrors] = useState({});
+  const [showDeadlineFields, setShowDeadlineFields] = useState(false);
+  const [wantsReminder, setWantsReminder] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+  
+    if (name === 'progress') {
+      if (value === 'Planning to Apply' || value === 'Applying') {
+        setShowDeadlineFields(true);
+      } else {
+        setShowDeadlineFields(false);
+        setWantsReminder(false);
+      }
+    }
+  
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-    
-    // Clear error for this field when user starts typing
+  
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -32,7 +43,6 @@ const AddInternshipModal = ({ onClose, onAddInternship }) => {
       }));
     }
   };
-  
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -81,10 +91,13 @@ const AddInternshipModal = ({ onClose, onAddInternship }) => {
       newErrors.dateApplied = 'Date applied is required';
     }
     
-    if (!formData.deadline) {
-      newErrors.deadline = 'Deadline is required';
-    } else if (formData.dateApplied && new Date(formData.deadline) < new Date(formData.dateApplied)) {
-      newErrors.deadline = 'Deadline cannot be before date applied';
+    // Only validate deadline if it's visible/required
+    if (showDeadlineFields) {
+      if (!formData.deadline) {
+        newErrors.deadline = 'Deadline is required';
+      } else if (formData.dateApplied && new Date(formData.deadline) < new Date(formData.dateApplied)) {
+        newErrors.deadline = 'Deadline cannot be before date applied';
+      }
     }
     
     setErrors(newErrors);
@@ -95,7 +108,7 @@ const AddInternshipModal = ({ onClose, onAddInternship }) => {
     e.preventDefault();
     
     if (validateForm()) {
-      onAddInternship(formData);
+      onAddInternship({ ...formData, wantsReminder });
     }
   };
 
@@ -207,47 +220,70 @@ const AddInternshipModal = ({ onClose, onAddInternship }) => {
                   <p className="mt-1 text-sm text-red-600">{errors.dateApplied}</p>
                 )}
               </div>
-              
-              {/* Deadline */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="deadline">
-                  Deadline *
-                </label>
-                <input
-                  type="date"
-                  id="deadline"
-                  name="deadline"
-                  value={formData.deadline}
-                  onChange={handleChange}
-                  className={`w-full px-3 py-2 border ${errors.deadline ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                />
-                {errors.deadline && (
-                  <p className="mt-1 text-sm text-red-600">{errors.deadline}</p>
+              {/* Progress */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="progress">
+                    Progress
+                  </label>
+                  <select
+                    id="progress"
+                    name="progress"
+                    value={formData.progress}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="All Statuses">All Statuses</option>
+                    <option value="Planning to Apply">Planning to Apply</option>
+                    <option value="Applying">Applying</option>
+                    <option value="Applied">Applied</option>
+                    <option value="Phone Call">Phone Call</option>
+                    <option value="Online Assessment">Online Assessment</option>
+                    <option value="Interview">Interview</option>
+                    <option value="Rejected">Rejected</option>
+                    <option value="Offer">Offer</option>
+                    <option value="Accepted">Accepted</option>
+                    <option value="Turned Down">Turned Down</option>
+                  </select>
+                </div>
+
+                {/* Conditional Deadline Fields */}
+                {showDeadlineFields && (
+                  <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="deadline">
+                    Application Deadline
+                  </label>
+                  <input
+                    type="date"
+                    id="deadline"
+                    name="deadline"
+                    value={formData.deadline}
+                    onChange={handleChange}
+                    disabled={!showDeadlineFields}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500
+                      ${showDeadlineFields ? 'border-gray-300' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}
+                    `}
+                  />
+                  {errors.deadline && (
+                    <p className="mt-1 text-sm text-red-600">{errors.deadline}</p>
+                  )}
+                
+                  {/* Reminder Toggle */}
+                  <div className="flex items-center mt-3">
+                    <input
+                      type="checkbox"
+                      id="wantsReminder"
+                      checked={wantsReminder}
+                      onChange={(e) => setWantsReminder(e.target.checked)}
+                      disabled={!showDeadlineFields}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="wantsReminder" className={`ml-2 text-sm ${showDeadlineFields ? 'text-gray-700' : 'text-gray-400'}`}>
+                      Send me email reminders
+                    </label>
+                  </div>
+                </div>
                 )}
               </div>
-              
-              {/* Progress */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="progress">
-                  Progress
-                </label>
-                <select
-                  id="progress"
-                  name="progress"
-                  value={formData.progress}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="Applied">Applied</option>
-                  <option value="Phone Call">Phone Call</option>
-                  <option value="Interview">Interview</option>
-                  <option value="Rejected">Rejected</option>
-                  <option value="Offer">Offer</option>
-                  <option value="Accepted">Accepted</option>
-                  <option value="Turned Down">Turned Down</option>
-                </select>
-              </div>
-            </div>
             
             {/* Company Logo/Image */}
             <div className="col-span-2 mb-6">

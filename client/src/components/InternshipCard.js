@@ -36,12 +36,16 @@ const InternshipCard = ({ internship, onClick }) => {
   // Add different border colors based on progress status
   const getProgressColor = () => {
     switch (internship.progress) {
+      case 'All Statuses':
+        return 'border-gray-200';
       case 'Planning to Apply':
         return 'border-gray-300';
       case 'Applying':
         return 'border-blue-500';
       case 'Applied':
         return 'border-blue-500';
+      case 'Online Assessment':
+        return 'border-purple-500'
       case 'Phone Call':
         return 'border-purple-500';
       case 'Interview':
@@ -111,11 +115,13 @@ const InternshipCard = ({ internship, onClick }) => {
         <div className="flex justify-between items-center mt-3">
           <span className="text-sm font-medium text-gray-700">{internship.pay}</span>
           <span className={`text-xs px-2 py-1 rounded-full ${
+            internship.progress === 'All Statuses' ? 'bg-gray-100 text-gray-800' :
             internship.progress === 'Planning to Apply' ? 'bg-gray-100 text-gray-800' :
             internship.progress === 'Applying' ? 'bg-blue-100 text-blue-800' :
             internship.progress === 'Applied' ? 'bg-blue-200 text-blue-900' :
             internship.progress === 'Phone Call' ? 'bg-purple-100 text-purple-800' :
-            internship.progress === 'Interview' ? 'bg-yellow-100 text-yellow-800' :
+            internship.progress === 'Online Assessment' ? 'bg-purple-100 text-purple-800' :
+            internship.progress === 'Interviewing' ? 'bg-yellow-100 text-yellow-800' :
             internship.progress === 'Rejected' ? 'bg-red-100 text-red-800' :
             internship.progress === 'Offer' ? 'bg-green-100 text-green-800' :
             internship.progress === 'Accepted' ? 'bg-green-200 text-green-900' :
