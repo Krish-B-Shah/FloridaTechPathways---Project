@@ -173,7 +173,7 @@ const SignUp = () => {
         </div>
 
         <div className="px-6 py-4 text-sm text-center text-gray-600">
-          Already have an account? <Link to="/" className="text-indigo-600 hover:text-indigo-500 font-medium">Sign in</Link>
+          Already have an account? <Link to="/signin" className="text-indigo-600 hover:text-indigo-500 font-medium">Sign in</Link>
           <p className="mt-2 text-xs text-gray-500">
             By signing up, you agree to our <Link to="/terms" className="text-indigo-600 hover:underline">Terms & Conditions</Link> and <Link to="/privacy" className="text-indigo-600 hover:underline">Privacy Policy</Link>.
           </p>

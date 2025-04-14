@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
 import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase'; // Adjust path accordingly
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const SignIn = () => {
   const [email, setEmail] = useState('');
@@ -166,7 +166,7 @@ const SignIn = () => {
         </div>
 
         <div className="px-6 py-4 text-sm text-center text-gray-600">
-          Don’t have an account? <a href="/signup" className="text-indigo-600 hover:text-indigo-500 font-medium">Sign up</a>
+          Don’t have an account? <Link to="/signup" className="text-indigo-600 hover:text-indigo-500 font-medium">Sign up</Link>
         </div>
       </div>
     </div>
