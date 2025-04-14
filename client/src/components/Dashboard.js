@@ -11,6 +11,7 @@ const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date');
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   
   // Form state
   const [formData, setFormData] = useState({
@@ -35,6 +36,11 @@ const Dashboard = () => {
   useEffect(() => {
     localStorage.setItem('internships', JSON.stringify(internships));
   }, [internships]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme); // Save theme to localStorage
+  }, [theme]);
 
   const handleOpenAddModal = () => {
     setFormData({
@@ -96,6 +102,10 @@ const Dashboard = () => {
     }
   };
 
+  const toggleTheme = () => {
+    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
+  };
+
   // Filter and sort internships
   const filteredInternships = internships
     .filter(internship => {
@@ -141,12 +151,22 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar onOpenAddModal={handleOpenAddModal} />
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}>
+      <Navbar onOpenAddModal={handleOpenAddModal} theme={theme} toggleTheme={toggleTheme} />
       
+      <div
+        className="w-full py-4 px-6"
+        style={{
+          // backgroundColor: 'var(--navbar-bg)',
+          color: 'var(--text-color)',
+        }}
+      >
+        <h1 className="text-xl font-bold">Trackship</h1>
+      </div>
+
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4 md:mb-0">Your Internship Dashboard</h1>
+          <h1 className={`text-3xl font-bold mb-4 md:mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Your Internship Dashboard</h1>
           
           <div className="flex flex-col sm:flex-row gap-3">
             <button
@@ -158,6 +178,8 @@ const Dashboard = () => {
             </button>
           </div>
         </div>
+
+        {/* Remove the theme toggle button from here */}
 
         <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
           <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -178,7 +200,11 @@ const Dashboard = () => {
               <select 
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  theme === 'dark' 
+                    ? 'bg-gray-700 text-white border-gray-600' 
+                    : 'bg-white text-gray-800 border-gray-300'
+                }`}
               >
                 <option value="all">All Statuses</option>
                 <option value="applied">Applied</option>
@@ -191,7 +217,11 @@ const Dashboard = () => {
               <select 
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  theme === 'dark' 
+                    ? 'bg-gray-700 text-white border-gray-600' 
+                    : 'bg-white text-gray-800 border-gray-300'
+                }`}
               >
                 <option value="date">Sort by Date</option>
                 <option value="company">Sort by Company</option>
@@ -285,81 +315,93 @@ const Dashboard = () => {
 
       {/* Add Internship Modal */}
       <Modal isOpen={isModalOpen} onClose={handleCloseAddModal}>
-        <div className="p-6">
+        <div className={`p-6 ${theme === 'dark' ? 'bg-black text-white' : 'bg-white text-gray-900'}`}>
           <h2 className="text-xl font-bold mb-4">Add New Internship</h2>
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Position Title*</label>
+              <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Position Title*</label>
               <input
                 type="text"
                 name="title"
                 value={formData.title}
                 onChange={handleInputChange}
                 placeholder="Software Engineer Intern"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  theme === 'dark' ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-400' : 'bg-white border-gray-300 placeholder-gray-500'
+                }`}
                 required
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Company*</label>
+              <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Company*</label>
               <input
                 type="text"
                 name="company"
                 value={formData.company}
                 onChange={handleInputChange}
                 placeholder="Company Name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  theme === 'dark' ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-400' : 'bg-white border-gray-300 placeholder-gray-500'
+                }`}
                 required
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+              <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Location</label>
               <input
                 type="text"
                 name="location"
                 value={formData.location}
                 onChange={handleInputChange}
                 placeholder="City, State or Remote"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  theme === 'dark' ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-400' : 'bg-white border-gray-300 placeholder-gray-500'
+                }`}
               />
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Start Date</label>
                 <input
                   type="text"
                   name="startDate"
                   value={formData.startDate}
                   onChange={handleInputChange}
                   placeholder="June 2025"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    theme === 'dark' ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-400' : 'bg-white border-gray-300 placeholder-gray-500'
+                  }`}
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Duration</label>
                 <input
                   type="text"
                   name="duration"
                   value={formData.duration}
                   onChange={handleInputChange}
                   placeholder="3 months"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    theme === 'dark' ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-400' : 'bg-white border-gray-300 placeholder-gray-500'
+                  }`}
                 />
               </div>
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Status</label>
               <select
                 name="status"
                 value={formData.status}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white border-gray-300'
+                }`}
               >
                 <option value="applied">Applied</option>
                 <option value="interviewing">Interviewing</option>
@@ -370,14 +412,16 @@ const Dashboard = () => {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+              <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Notes</label>
               <textarea
                 name="notes"
                 value={formData.notes}
                 onChange={handleInputChange}
                 placeholder="Additional details about the application..."
                 rows="3"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  theme === 'dark' ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-400' : 'bg-white border-gray-300 placeholder-gray-500'
+                }`}
               ></textarea>
             </div>
           </div>
@@ -385,7 +429,9 @@ const Dashboard = () => {
           <div className="mt-6 flex justify-end space-x-3">
             <button
               onClick={handleCloseAddModal}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className={`px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                theme === 'dark' ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
             >
               Cancel
             </button>
