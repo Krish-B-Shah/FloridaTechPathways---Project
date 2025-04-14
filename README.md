@@ -15,7 +15,7 @@ A comprehensive web application designed to help students and professionals trac
 
 - Frontend: React.js with TypeScript
 - Backend: Node.js with Express
-- Database: MongoDB
+- Database: Firebase
 - Authentication: JWT
 - Machine Learning: TensorFlow.js for recommendations
 - UI Framework: Material-UI
