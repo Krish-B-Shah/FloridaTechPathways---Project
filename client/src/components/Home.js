@@ -270,12 +270,6 @@ const Home = () => {
                   >
                     Create Free Account
                   </button>
-                  <button 
-                    onClick={() => navigate('/features')}
-                    className="mt-3 sm:mt-0 sm:ml-3 flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300 w-full sm:w-auto"
-                  >
-                    Learn More
-                  </button>
                 </div>
               </div>
             </div>

@@ -139,23 +139,38 @@ const Dashboard = () => {
       }
     });
 
-  // Status badge component
   const StatusBadge = ({ status }) => {
+    const statusDisplayNames = {
+      all: "All Statuses",
+      planningtoapply: "Planning to Apply",
+      applying: "Applying",
+      applied: "Applied",
+      phonecall: "Phone Call",
+      oa: "Online Assessment",
+      interviewing: "Interviewing",
+      offered: "Offered",
+      accepted: "Accepted",
+      rejected: "Rejected"
+    };
+    
     const statusStyles = {
-      planning_To_Apply: "bg-gray-50 text-gray-800",
+      planningtoapply: "bg-gray-50 text-gray-800",
       applying: "bg-blue-50 text-blue-800",
       applied: "bg-blue-100 text-blue-800",
-      online_Assessment: "bg-purple-50 text-purple-800",
-      phone_Call: "bg-purple-50 text-purple-800",
+      oa: "bg-purple-50 text-purple-800",
+      phonecall: "bg-purple-50 text-purple-800",
       interviewing: "bg-yellow-50 text-yellow-800",
       offered: "bg-green-50 text-green-800",
       rejected: "bg-red-50 text-red-800",
-      accepted: "bg-green-100 text-green-900"
+      accepted: "bg-green-100 text-green-900",
+      all: "bg-gray-100 text-gray-800"
     };
     
+    const displayName = statusDisplayNames[status.toLowerCase()] || status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+    
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusStyles[status] || "bg-gray-100 text-gray-800"}`}>
-        {status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusStyles[status.toLowerCase()] || "bg-gray-100 text-gray-800"}`}>
+        {displayName}
       </span>
     );
   };
@@ -457,7 +472,7 @@ const Dashboard = () => {
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
               <input
