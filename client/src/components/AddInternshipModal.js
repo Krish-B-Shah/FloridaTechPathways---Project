@@ -215,7 +215,7 @@ const AddInternshipModal = ({ isOpen, onClose, onAddInternship, initialData, isE
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="dateApplied">
-                  Date Applied *
+                  Date Applied
                 </label>
                 <input
                   type="date"
