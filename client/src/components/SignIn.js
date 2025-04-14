@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
 import { useAuth } from '../AuthContext';
+import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { auth, googleProvider } from '../firebase';
 import { useNavigate, Link } from 'react-router-dom';
 
 const SignIn = () => {
@@ -174,7 +176,7 @@ const SignIn = () => {
         </div>
 
         <div className="px-6 py-4 text-sm text-center text-gray-600">
-          Don't have an account? <Link to="/signup" className="text-indigo-600 hover:text-indigo-500 font-medium">Sign up</Link>
+          Don’t have an account? <Link to="/signup" className="text-indigo-600 hover:text-indigo-500 font-medium">Sign up</Link>
         </div>
       </div>
     </div>
