@@ -1,9 +1,8 @@
-// src/firebase.js
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
   connectAuthEmulator,
-  GoogleAuthProvider // ✅ Add this
+  GoogleAuthProvider 
 } from "firebase/auth";
 import {
   getFirestore,
@@ -67,7 +66,6 @@ export const handleFirebaseError = (error) => {
   return errorMessages[errorCode] || errorMessage || "An unexpected error occurred";
 };
 
-// ✅ Export Google provider
 const googleProvider = new GoogleAuthProvider();
 export { auth, db, storage, googleProvider };
 export default app;

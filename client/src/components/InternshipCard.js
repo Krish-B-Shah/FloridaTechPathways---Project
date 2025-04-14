@@ -1,10 +1,8 @@
 import React from 'react';
 
 const InternshipCard = ({ internship, onClick }) => {
-  // Format date to show Month Year - Month Year with safe handling
   const formatDateRange = () => {
     try {
-      // Handle missing values with fallbacks - either new or old field names
       const dateAppliedStr = internship.dateApplied || internship.startDate || '';
       const deadlineStr = internship.deadline || internship.endDate || '';
       
@@ -15,7 +13,6 @@ const InternshipCard = ({ internship, onClick }) => {
       const dateApplied = new Date(dateAppliedStr);
       const deadline = new Date(deadlineStr);
       
-      // Check for invalid dates
       if (isNaN(dateApplied.getTime()) || isNaN(deadline.getTime())) {
         return "Invalid date format";
       }
@@ -33,7 +30,6 @@ const InternshipCard = ({ internship, onClick }) => {
     }
   };
 
-  // Add different border colors based on progress status
   const getProgressColor = () => {
     switch (internship.progress) {
       case 'All Statuses':
@@ -58,7 +54,6 @@ const InternshipCard = ({ internship, onClick }) => {
         return 'border-green-700';
       case 'Turned Down':
         return 'border-orange-500';
-      // Maintain compatibility with old statuses
       case 'Completed':
         return 'border-green-500';
       case 'In Progress':
@@ -83,7 +78,6 @@ const InternshipCard = ({ internship, onClick }) => {
               alt={`${internship.companyName} logo`} 
               className="w-full h-full object-cover"
               onError={(e) => {
-                // If image fails to load, replace with default
                 e.target.onerror = null;
                 e.target.src = '/internship.png';
               }}
@@ -125,7 +119,6 @@ const InternshipCard = ({ internship, onClick }) => {
             internship.progress === 'Rejected' ? 'bg-red-100 text-red-800' :
             internship.progress === 'Offer' ? 'bg-green-100 text-green-800' :
             internship.progress === 'Accepted' ? 'bg-green-200 text-green-900' :
-            // Maintain compatibility with old statuses
             internship.progress === 'Completed' ? 'bg-green-100 text-green-800' :
             internship.progress === 'In Progress' ? 'bg-blue-100 text-blue-800' :
             internship.progress === 'Upcoming' ? 'bg-yellow-100 text-yellow-800' :

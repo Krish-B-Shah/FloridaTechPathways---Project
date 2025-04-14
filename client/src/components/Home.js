@@ -28,11 +28,9 @@ const Home = () => {
   ]);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
-  // Animation on mount
   useEffect(() => {
     setIsVisible(true);
     
-    // Simulate fetching user stats
     const timer = setTimeout(() => {
       setStats({
         total: 12,
@@ -41,7 +39,6 @@ const Home = () => {
       });
     }, 500);
     
-    // Testimonial rotation
     const testimonialTimer = setInterval(() => {
       setCurrentTestimonial(prev => (prev + 1) % testimonials.length);
     }, 8000);
@@ -51,8 +48,6 @@ const Home = () => {
       clearInterval(testimonialTimer);
     };
   }, [testimonials.length]);
-
-  // Animated feature items
   const features = [
     {
       icon: (
@@ -91,7 +86,6 @@ const Home = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
       <Navbar onOpenAddModal={() => {}} />
 
-      {/* Hero Section */}
       <div className={`transition-all duration-1000 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
           <div className="lg:flex lg:items-center lg:justify-between">
@@ -169,7 +163,6 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Features Section */}
       <div className="py-12 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
@@ -202,7 +195,6 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Testimonials */}
       <div className="bg-indigo-700 py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="relative overflow-hidden rounded-xl bg-white shadow-xl p-8">
@@ -249,7 +241,6 @@ const Home = () => {
         </div>
       </div>
 
-      {/* CTA Section */}
       <div className="bg-white py-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-indigo-50 rounded-2xl overflow-hidden shadow-xl">

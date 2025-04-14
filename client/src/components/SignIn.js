@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
-import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
-import { auth, googleProvider } from '../firebase'; // Adjust path accordingly
-import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../AuthContext';
+import { useNavigate, Link } from 'react-router-dom';
 
 const SignIn = () => {
   const [email, setEmail] = useState('');
@@ -11,14 +10,27 @@ const SignIn = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  
+  const { login, loginWithGoogle, currentUser, error: authError } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (currentUser) {
+      navigate('/dashboard');
+    }
+  }, [currentUser, navigate]);
+
+  useEffect(() => {
+    if (authError) {
+      setErrors({ form: authError });
+    }
+  }, [authError]);
 
   const validateForm = () => {
     const newErrors = {};
     if (!email) newErrors.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'Email address is invalid';
     if (!password) newErrors.password = 'Password is required';
-    else if (password.length < 6) newErrors.password = 'Password must be at least 6 characters';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -29,12 +41,8 @@ const SignIn = () => {
 
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      alert('Sign in successful!');
-      navigate('/dashboard'); // Redirect to dashboard
+      await login(email, password);
     } catch (error) {
-      console.error('Firebase sign-in error:', error);
-      setErrors({ form: error.message });
     } finally {
       setIsLoading(false);
     }
@@ -43,12 +51,8 @@ const SignIn = () => {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      await signInWithPopup(auth, googleProvider);
-      alert('Signed in with Google!');
-      navigate('/dashboard');
+      await loginWithGoogle();
     } catch (error) {
-      console.error('Google sign-in error:', error);
-      setErrors({ form: error.message });
     } finally {
       setIsLoading(false);
     }
@@ -91,7 +95,7 @@ const SignIn = () => {
           <div className="space-y-2">
             <div className="flex justify-between">
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
-              <a href="/forgot-password" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">Forgot password?</a>
+              <Link to="/forgot-password" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">Forgot password?</Link>
             </div>
             <div className="relative rounded-md shadow-sm">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -106,7 +110,11 @@ const SignIn = () => {
                 onChange={(e) => setPassword(e.target.value)}
               />
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-gray-400 hover:text-gray-500 focus:outline-none">
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword(!showPassword)} 
+                  className="text-gray-400 hover:text-gray-500 focus:outline-none"
+                >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
@@ -166,7 +174,7 @@ const SignIn = () => {
         </div>
 
         <div className="px-6 py-4 text-sm text-center text-gray-600">
-          Don’t have an account? <a href="/signup" className="text-indigo-600 hover:text-indigo-500 font-medium">Sign up</a>
+          Don't have an account? <Link to="/signup" className="text-indigo-600 hover:text-indigo-500 font-medium">Sign up</Link>
         </div>
       </div>
     </div>

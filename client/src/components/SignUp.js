@@ -1,27 +1,48 @@
-import React, { useState } from 'react';
-import { Eye, EyeOff, Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
-import { createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
-import { auth, googleProvider } from '../firebase'; // Adjust path accordingly
+import React, { useState, useEffect } from 'react';
+import { Eye, EyeOff, Mail, Lock, User, ArrowRight, AlertCircle } from 'lucide-react';
+import { useAuth } from '../AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 
 const SignUp = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  
+  const { signup, loginWithGoogle, currentUser, error: authError } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (currentUser) {
+      navigate('/dashboard');
+    }
+  }, [currentUser, navigate]);
+
+  useEffect(() => {
+    if (authError) {
+      setErrors({ form: authError });
+    }
+  }, [authError]);
 
   const validateForm = () => {
     const newErrors = {};
+    
+    if (!username) newErrors.username = 'Username is required';
+    else if (username.length < 3) newErrors.username = 'Username must be at least 3 characters';
+    
     if (!email) newErrors.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'Email address is invalid';
+    
     if (!password) newErrors.password = 'Password is required';
     else if (password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+    
     if (!confirmPassword) newErrors.confirmPassword = 'Confirm password is required';
     else if (password !== confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -32,12 +53,8 @@ const SignUp = () => {
 
     setIsLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      alert('Account created successfully!');
-      navigate('/dashboard'); // Redirect to dashboard
+      await signup(email, password, username);
     } catch (error) {
-      console.error('Firebase sign-up error:', error);
-      setErrors({ form: error.message });
     } finally {
       setIsLoading(false);
     }
@@ -46,12 +63,8 @@ const SignUp = () => {
   const handleGoogleSignUp = async () => {
     setIsLoading(true);
     try {
-      await signInWithPopup(auth, googleProvider);
-      alert('Signed up with Google!');
-      navigate('/dashboard');
+      await loginWithGoogle();
     } catch (error) {
-      console.error('Google sign-up error:', error);
-      setErrors({ form: error.message });
     } finally {
       setIsLoading(false);
     }
@@ -72,6 +85,24 @@ const SignUp = () => {
               <span>{errors.form}</span>
             </div>
           )}
+
+          <div className="space-y-2">
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700">Username</label>
+            <div className="relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <User className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                id="username"
+                className={`block w-full pl-10 pr-3 py-2 border ${errors.username ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2`}
+                placeholder="johndoe"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+            </div>
+            {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username}</p>}
+          </div>
 
           <div className="space-y-2">
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email Address</label>
@@ -106,7 +137,11 @@ const SignUp = () => {
                 onChange={(e) => setPassword(e.target.value)}
               />
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-gray-400 hover:text-gray-500 focus:outline-none">
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword(!showPassword)} 
+                  className="text-gray-400 hover:text-gray-500 focus:outline-none"
+                >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
@@ -129,7 +164,11 @@ const SignUp = () => {
                 onChange={(e) => setConfirmPassword(e.target.value)}
               />
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="text-gray-400 hover:text-gray-500 focus:outline-none">
+                <button 
+                  type="button" 
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)} 
+                  className="text-gray-400 hover:text-gray-500 focus:outline-none"
+                >
                   {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
@@ -173,7 +212,7 @@ const SignUp = () => {
         </div>
 
         <div className="px-6 py-4 text-sm text-center text-gray-600">
-          Already have an account? <Link to="/" className="text-indigo-600 hover:text-indigo-500 font-medium">Sign in</Link>
+          Already have an account? <Link to="/signin" className="text-indigo-600 hover:text-indigo-500 font-medium">Sign in</Link>
           <p className="mt-2 text-xs text-gray-500">
             By signing up, you agree to our <Link to="/terms" className="text-indigo-600 hover:underline">Terms & Conditions</Link> and <Link to="/privacy" className="text-indigo-600 hover:underline">Privacy Policy</Link>.
           </p>

@@ -1,219 +1,212 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
-import Modal from './Modal';
+import AddInternshipModal from './AddInternshipModal';
+import DetailedView from './DetailedView';
 import { Calendar, Clock, MapPin, Briefcase, Edit, Trash2, PlusCircle, Search } from 'lucide-react';
+import { FirebaseService } from '../services/FirebaseService';
+import { useAuth } from '../AuthContext';
 
 const Dashboard = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [internships, setInternships] = useState([]);
-  const [editIndex, setEditIndex] = useState(null);
+  const [filteredInternships, setFilteredInternships] = useState([]);
+  const [selectedInternship, setSelectedInternship] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date');
-  const [showDeadlineFields, setShowDeadlineFields] = useState(false);
-  const [deadline, setDeadline] = useState('');
-  const [wantsReminder, setWantsReminder] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
-  // Status order for sorting (in priority order)
-  const statusOrder = {
-    'planningtoapply': 1,
-    'applying': 2,
-    'applied': 3,
-    'phonecall': 4,
-    'oa': 5,
-    'interviewing': 6,
-    'offered': 7,
-    'accepted': 8,
-    'rejected': 9,
-    'all': 10 // Fallback for any other status
-  };
+  const { currentUser } = useAuth();
+  const navigate = useNavigate();
   
-  // Form state
-  const [formData, setFormData] = useState({
-    title: '',
-    company: '',
-    location: '',
-    startDate: '',
-    duration: '',
-    status: 'all',
-    notes: ''
-  });
-
-  // Load data from localStorage when component mounts
   useEffect(() => {
-    const savedInternships = localStorage.getItem('internships');
-    if (savedInternships) {
-      setInternships(JSON.parse(savedInternships));
+    if (!currentUser) {
+      navigate('/signin');
     }
-  }, []);
+  }, [currentUser, navigate]);
 
-  // Save to localStorage whenever internships change
   useEffect(() => {
-    localStorage.setItem('internships', JSON.stringify(internships));
-  }, [internships]);
-
-  const handleOpenAddModal = () => {
-    setFormData({
-      title: '',
-      company: '',
-      location: '',
-      startDate: '',
-      duration: '',
-      status: 'all',
-      notes: ''
-    });
-    setIsModalOpen(true);
-  };
-
-  const handleCloseAddModal = () => {
-    setIsModalOpen(false);
-  };
-
-  const handleOpenEditModal = (index) => {
-    setEditIndex(index);
-    setFormData(internships[index]);
-    setIsEditModalOpen(true);
-  };
-
-  const handleCloseEditModal = () => {
-    setIsEditModalOpen(false);
-    setEditIndex(null);
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    
-    if (name === 'progress') {
-      if (value === 'Planning to Apply' || value === 'Applying') {
-        setShowDeadlineFields(true);
-      } else {
-        setShowDeadlineFields(false);
-        setDeadline('');       // Clear deadline if progress changes
-        setWantsReminder(false);
+    const fetchInternships = async () => {
+      if (!currentUser) return;
+      
+      try {
+        setLoading(true);
+        const userInternships = await FirebaseService.getUserInternships(currentUser.uid);
+        setInternships(userInternships);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching internships:", err);
+        setError("Failed to load internships. Please try again later.");
+        setLoading(false);
       }
-    }
-  
-    setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
-  };
-
-  const handleAddInternship = () => {
-    if (formData.title.trim() && formData.company.trim()) {
-      const newInternship = {
-        ...formData,
-        deadline: deadline || null,
-        wantsReminder: wantsReminder,
-        createdAt: new Date().toISOString()
-      };
-      setInternships([...internships, newInternship]);
-      handleCloseAddModal();
-    }
-  };
-
-  const handleUpdateInternship = () => {
-    if (formData.title.trim() && formData.company.trim() && editIndex !== null) {
-      const updatedInternships = [...internships];
-      updatedInternships[editIndex] = { 
-        ...formData,
-        createdAt: internships[editIndex].createdAt || new Date().toISOString() 
-      };
-      setInternships(updatedInternships);
-      handleCloseEditModal();
-    }
-  };
-
-  const handleDeleteInternship = (index) => {
-    if (window.confirm('Are you sure you want to delete this internship?')) {
-      const filteredInternships = internships.filter((_, i) => i !== index);
-      setInternships(filteredInternships);
-    }
-  };
-
-  // Helper function to parse dates for comparison
-  const parseDateForComparison = (dateString) => {
-    if (!dateString) return null;
-    
-    // Handle various date formats
-    const monthMap = {
-      'january': 0, 'jan': 0, 'february': 1, 'feb': 1, 'march': 2, 'mar': 2,
-      'april': 3, 'apr': 3, 'may': 4, 'june': 5, 'jun': 5, 'july': 6, 'jul': 6,
-      'august': 7, 'aug': 7, 'september': 8, 'sep': 8, 'sept': 8, 'october': 9, 'oct': 9,
-      'november': 10, 'nov': 10, 'december': 11, 'dec': 11
     };
+
+    fetchInternships();
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (!internships) return;
     
-    const parts = dateString.toLowerCase().replace(',', '').split(' ');
+    let results = [...internships];
     
-    // Handle formats like "June 2025"
-    if (parts.length === 2) {
-      const month = monthMap[parts[0]];
-      const year = parseInt(parts[1], 10);
-      
-      if (!isNaN(month) && !isNaN(year)) {
-        return new Date(year, month, 1);
-      }
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      results = results.filter(
+        internship => (
+          (internship.companyName && internship.companyName.toLowerCase().includes(searchLower)) ||
+          (internship.positionTitle && internship.positionTitle.toLowerCase().includes(searchLower)) ||
+          (internship.location && internship.location.toLowerCase().includes(searchLower))
+        )
+      );
     }
     
-    // If parsing fails, try using Date.parse which handles other standard formats
-    const timestamp = Date.parse(dateString);
-    return isNaN(timestamp) ? null : new Date(timestamp);
-  };
-
-  // Helper function to get status priority for sorting
-  const getStatusPriority = (status) => {
-    // Convert status to lowercase and normalize it by removing spaces and special characters
-    const normalizedStatus = (status || "").toLowerCase().replace(/\s+/g, '');
-    
-    // Return the priority or a default high number if not found
-    return statusOrder[normalizedStatus] || 999;
-  };
-
-  // Filter and sort internships
-  const filteredInternships = internships
-    .filter(internship => {
-      // First apply status filter
-      if (filter !== 'all' && internship.status !== filter) return false;
-      
-      // Then apply search
-      const searchLower = searchTerm.toLowerCase();
-      return (
-        internship.title.toLowerCase().includes(searchLower) ||
-        internship.company.toLowerCase().includes(searchLower) ||
-        internship.location.toLowerCase().includes(searchLower)
+    if (filter !== 'all') {
+      results = results.filter(internship => 
+        internship.progress && internship.progress.toLowerCase().replace(/\s+/g, '') === filter
       );
-    })
-    .sort((a, b) => {
+    }
+    
+    results.sort((a, b) => {
       switch (sortBy) {
         case 'date': {
-          // Parse and compare start dates
-          const dateA = parseDateForComparison(a.startDate);
-          const dateB = parseDateForComparison(b.startDate);
-          
-          // If both dates are valid, compare them
-          if (dateA && dateB) {
-            return dateA - dateB;
-          }
-          
-          // If only one date is valid, put the one with a date first
-          if (dateA) return -1;
-          if (dateB) return 1;
-          
-          // If neither has a valid start date, fall back to creation date
-          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+          const dateA = a.createdAt ? new Date(a.createdAt.seconds * 1000) : new Date(0);
+          const dateB = b.createdAt ? new Date(b.createdAt.seconds * 1000) : new Date(0);
+          return dateB - dateA;
         }
         case 'company':
-          return a.company.localeCompare(b.company);
+          return (a.companyName || '').localeCompare(b.companyName || '');
         case 'status': {
-          // Use the helper function to determine status priorities
-          const priorityA = getStatusPriority(a.status);
-          const priorityB = getStatusPriority(b.status);
+          const statusOrder = {
+            'planningtoapply': 1,
+            'applying': 2,
+            'applied': 3,
+            'phonecall': 4,
+            'onlineassessment': 5,
+            'interview': 6,
+            'offer': 7,
+            'accepted': 8,
+            'rejected': 9,
+            'turneddown': 10,
+            'all': 11
+          };
           
-          // Sort by status priority (lower number = higher priority)
-          return priorityA - priorityB;
+          const statusA = a.progress ? a.progress.toLowerCase().replace(/\s+/g, '') : 'all';
+          const statusB = b.progress ? b.progress.toLowerCase().replace(/\s+/g, '') : 'all';
+          
+          return (statusOrder[statusA] || 99) - (statusOrder[statusB] || 99);
         }
         default:
           return 0;
       }
     });
+    
+    setFilteredInternships(results);
+  }, [internships, searchTerm, filter, sortBy]);
+
+  const handleOpenAddModal = () => {
+    setSelectedInternship(null);
+    setIsAddModalOpen(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setIsAddModalOpen(false);
+  };
+
+  const handleOpenEditModal = (internship) => {
+    setSelectedInternship(internship);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+  };
+
+  const handleAddInternship = async (internshipData) => {
+    try {
+      const newInternship = await FirebaseService.addInternship(currentUser.uid, internshipData);
+      
+      if (!newInternship.id) {
+        console.error("Added internship is missing ID:", newInternship);
+        alert("Error: Failed to add internship properly. Please try again.");
+        return;
+      }
+      
+      console.log("Successfully added internship with ID:", newInternship.id);
+      
+      setInternships(prev => [newInternship, ...prev]);
+      handleCloseAddModal();
+    } catch (err) {
+      console.error("Error adding internship:", err);
+      alert("Failed to add internship. Please try again.");
+    }
+  };
+
+  const handleUpdateInternship = async (updatedData) => {
+    try {
+      if (!selectedInternship || !selectedInternship.id) {
+        console.error("No internship selected for update or missing ID");
+        alert("Failed to update internship: No internship selected.");
+        return;
+      }
+      
+      const updated = await FirebaseService.updateInternship(selectedInternship.id, updatedData);
+      setInternships(prev => 
+        prev.map(item => item.id === selectedInternship.id ? updated : item)
+      );
+      handleCloseEditModal();
+    } catch (err) {
+      console.error("Error updating internship:", err);
+      alert("Failed to update internship. Please try again.");
+    }
+  };
+
+  const handleDeleteInternship = async (internshipId) => {
+    if (!internshipId) {
+      console.error('No internship ID provided for deletion');
+      alert('Error: Cannot delete this internship. ID is missing.');
+      return;
+    }
+    
+    if (window.confirm('Are you sure you want to delete this internship?')) {
+      try {
+        console.log('Attempting to delete internship with ID:', internshipId);
+        await FirebaseService.deleteInternship(internshipId);
+        
+        console.log('Delete successful, updating local state...');
+        
+        setInternships(prevInternships => {
+          return prevInternships.filter(item => item.id !== internshipId);
+        });
+        
+        if (selectedInternship && selectedInternship.id === internshipId) {
+          setSelectedInternship(null);
+        }
+      } catch (err) {
+        console.error("Error deleting internship:", err);
+        alert("Failed to delete internship. Please try again.");
+      }
+    }
+  };
+
+  const handleUpdateProgress = async (internshipId, progress) => {
+    try {
+      if (!internshipId) {
+        console.error("No internship ID provided for progress update");
+        return;
+      }
+      
+      await FirebaseService.updateInternshipProgress(internshipId, progress);
+      setInternships(prev => 
+        prev.map(item => item.id === internshipId ? {...item, progress} : item)
+      );
+    } catch (err) {
+      console.error("Error updating progress:", err);
+      alert("Failed to update progress. Please try again.");
+    }
+  };
 
   const StatusBadge = ({ status }) => {
     const statusDisplayNames = {
@@ -222,29 +215,30 @@ const Dashboard = () => {
       applying: "Applying",
       applied: "Applied",
       phonecall: "Phone Call",
-      oa: "Online Assessment",
-      interviewing: "Interviewing",
-      offered: "Offered",
+      onlineassessment: "Online Assessment",
+      interview: "Interview",
+      offer: "Offer",
       accepted: "Accepted",
-      rejected: "Rejected"
+      rejected: "Rejected",
+      turneddown: "Turned Down"
     };
     
     const statusStyles = {
       planningtoapply: "bg-gray-50 text-gray-800",
       applying: "bg-blue-50 text-blue-800",
       applied: "bg-blue-100 text-blue-800",
-      oa: "bg-purple-50 text-purple-800",
+      onlineassessment: "bg-purple-50 text-purple-800",
       phonecall: "bg-purple-50 text-purple-800",
-      interviewing: "bg-yellow-50 text-yellow-800",
-      offered: "bg-green-50 text-green-800",
+      interview: "bg-yellow-50 text-yellow-800",
+      offer: "bg-green-50 text-green-800",
       rejected: "bg-red-50 text-red-800",
       accepted: "bg-green-100 text-green-900",
+      turneddown: "bg-orange-50 text-orange-800",
       all: "bg-gray-100 text-gray-800"
     };
     
-    // Normalize status to lowercase and remove spaces for comparison
-    const normalizedStatus = status.toLowerCase().replace(/\s+/g, '');
-    const displayName = statusDisplayNames[normalizedStatus] || status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+    const normalizedStatus = status ? status.toLowerCase().replace(/\s+/g, '') : 'all';
+    const displayName = statusDisplayNames[normalizedStatus] || status;
     
     return (
       <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusStyles[normalizedStatus] || "bg-gray-100 text-gray-800"}`}>
@@ -253,9 +247,54 @@ const Dashboard = () => {
     );
   };
 
+  const handleSelectInternship = (internship) => {
+    setSelectedInternship(internship);
+  };
+
+  const handleCloseDetailedView = () => {
+    setSelectedInternship(null);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-lg text-gray-700">Loading your internships...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center bg-red-50 p-6 rounded-lg shadow-sm max-w-md">
+          <div className="text-red-600 text-5xl mb-4">⚠️</div>
+          <h2 className="text-xl font-bold text-red-700 mb-2">Error Loading Data</h2>
+          <p className="text-gray-700 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar onOpenAddModal={handleOpenAddModal} />
+      
+      {selectedInternship && (
+        <DetailedView 
+          internship={selectedInternship} 
+          onClose={handleCloseDetailedView}
+          onUpdateProgress={handleUpdateProgress}
+        />
+      )}
       
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
@@ -298,11 +337,12 @@ const Dashboard = () => {
                 <option value="applying">Applying</option>
                 <option value="applied">Applied</option>
                 <option value="phonecall">Phone Call</option>
-                <option value="oa">Online Assessment</option>
-                <option value="interviewing">Interviewing</option>
-                <option value="offered">Offered</option>
+                <option value="onlineassessment">Online Assessment</option>
+                <option value="interview">Interview</option>
+                <option value="offer">Offer</option>
                 <option value="accepted">Accepted</option>
                 <option value="rejected">Rejected</option>
+                <option value="turneddown">Turned Down</option>
               </select>
               
               <select 
@@ -310,7 +350,7 @@ const Dashboard = () => {
                 onChange={(e) => setSortBy(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="date">Sort by Start Date</option>
+                <option value="date">Sort by Date Added</option>
                 <option value="company">Sort by Company</option>
                 <option value="status">Sort by Status</option>
               </select>
@@ -338,17 +378,20 @@ const Dashboard = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredInternships.map((internship, index) => (
-                <div key={index} className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                  <div className="p-5">
+              {filteredInternships.map((internship) => (
+                <div key={internship.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                  <div 
+                    className="p-5 cursor-pointer"
+                    onClick={() => handleSelectInternship(internship)}
+                  >
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900">{internship.title}</h3>
-                      <StatusBadge status={internship.status} />
+                      <h3 className="text-lg font-semibold text-gray-900">{internship.positionTitle}</h3>
+                      <StatusBadge status={internship.progress} />
                     </div>
                     
                     <div className="flex items-center text-gray-600 mb-1">
                       <Briefcase className="flex-shrink-0 mr-1.5 h-4 w-4" />
-                      <span className="text-sm">{internship.company}</span>
+                      <span className="text-sm">{internship.companyName}</span>
                     </div>
                     
                     {internship.location && (
@@ -358,17 +401,17 @@ const Dashboard = () => {
                       </div>
                     )}
                     
-                    {internship.startDate && (
+                    {internship.dateApplied && (
                       <div className="flex items-center text-gray-600 mb-1">
                         <Calendar className="flex-shrink-0 mr-1.5 h-4 w-4" />
-                        <span className="text-sm">{internship.startDate}</span>
+                        <span className="text-sm">Applied: {new Date(internship.dateApplied).toLocaleDateString()}</span>
                       </div>
                     )}
                     
-                    {internship.duration && (
+                    {internship.pay && (
                       <div className="flex items-center text-gray-600 mb-1">
                         <Clock className="flex-shrink-0 mr-1.5 h-4 w-4" />
-                        <span className="text-sm">{internship.duration}</span>
+                        <span className="text-sm">{internship.pay}</span>
                       </div>
                     )}
                     
@@ -381,13 +424,25 @@ const Dashboard = () => {
                   
                   <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex justify-end space-x-2">
                     <button
-                      onClick={() => handleOpenEditModal(internships.indexOf(internship))}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenEditModal(internship);
+                      }}
                       className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                     >
                       <Edit className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => handleDeleteInternship(internships.indexOf(internship))}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (internship && internship.id) {
+                          console.log('Delete button clicked for internship ID:', internship.id);
+                          handleDeleteInternship(internship.id);
+                        } else {
+                          console.error('Missing internship ID for deletion:', internship);
+                          alert('Error: Cannot delete this internship. ID is missing.');
+                        }
+                      }}
                       className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -400,241 +455,22 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Add Internship Modal */}
-      <Modal isOpen={isModalOpen} onClose={handleCloseAddModal}>
-        <div className="p-6">
-          <h2 className="text-xl font-bold mb-4">Add New Internship</h2>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Position Title*</label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleInputChange}
-                placeholder="Software Engineer Intern"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Company*</label>
-              <input
-                type="text"
-                name="company"
-                value={formData.company}
-                onChange={handleInputChange}
-                placeholder="Company Name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-              <input
-                type="text"
-                name="location"
-                value={formData.location}
-                onChange={handleInputChange}
-                placeholder="City, State or Remote"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                <input
-                  type="text"
-                  name="startDate"
-                  value={formData.startDate}
-                  onChange={handleInputChange}
-                  placeholder="June 2025"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
-                <input
-                  type="text"
-                  name="duration"
-                  value={formData.duration}
-                  onChange={handleInputChange}
-                  placeholder="3 months"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">All Statuses</option>
-                <option value="planningtoapply">Planning to Apply</option>
-                <option value="applying">Applying</option>
-                <option value="applied">Applied</option>
-                <option value="phonecall">Phone Call</option>
-                <option value="oa">Online Assessment</option>
-                <option value="interviewing">Interviewing</option>
-                <option value="offered">Offered</option>
-                <option value="accepted">Accepted</option>
-                <option value="rejected">Rejected</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-              <textarea
-                name="notes"
-                value={formData.notes}
-                onChange={handleInputChange}
-                placeholder="Additional details about the application..."
-                rows="3"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              ></textarea>
-            </div>
-          </div>
-          
-          <div className="mt-6 flex justify-end space-x-3">
-            <button
-              onClick={handleCloseAddModal}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleAddInternship}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              Add Internship
-            </button>
-          </div>
-        </div>
-      </Modal>
+      <AddInternshipModal 
+        isOpen={isAddModalOpen}
+        onClose={handleCloseAddModal}
+        onAddInternship={handleAddInternship}
+        isEditing={false}
+      />
 
-      {/* Edit Internship Modal */}
-      <Modal isOpen={isEditModalOpen} onClose={handleCloseEditModal}>
-        <div className="p-6">
-          <h2 className="text-xl font-bold mb-4">Edit Internship</h2>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Position Title*</label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Company*</label>
-              <input
-                type="text"
-                name="company"
-                value={formData.company}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-              <input
-                type="text"
-                name="location"
-                value={formData.location}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                <input
-                  type="text"
-                  name="startDate"
-                  value={formData.startDate}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
-                <input
-                  type="text"
-                  name="duration"
-                  value={formData.duration}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">All Statuses</option>
-                <option value="planningtoapply">Planning to Apply</option>
-                <option value="applying">Applying</option>
-                <option value="applied">Applied</option>
-                <option value="phonecall">Phone Call</option>
-                <option value="oa">Online Assessment</option>
-                <option value="interviewing">Interviewing</option>
-                <option value="offered">Offered</option>
-                <option value="accepted">Accepted</option>
-                <option value="rejected">Rejected</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-              <textarea
-                name="notes"
-                value={formData.notes}
-                onChange={handleInputChange}
-                rows="3"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              ></textarea>
-            </div>
-          </div>
-          
-          <div className="mt-6 flex justify-end space-x-3">
-            <button
-              onClick={handleCloseEditModal}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleUpdateInternship}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              Update Internship
-            </button>
-          </div>
-        </div>
-      </Modal>
+      {selectedInternship && (
+        <AddInternshipModal 
+          isOpen={isEditModalOpen}
+          onClose={handleCloseEditModal}
+          onAddInternship={handleUpdateInternship}
+          initialData={selectedInternship}
+          isEditing={true}
+        />
+      )}
     </div>
   );
 };
