@@ -15,6 +15,20 @@ const Dashboard = () => {
   const [deadline, setDeadline] = useState('');
   const [wantsReminder, setWantsReminder] = useState(false);
   
+  // Status order for sorting (in priority order)
+  const statusOrder = {
+    'planningtoapply': 1,
+    'applying': 2,
+    'applied': 3,
+    'phonecall': 4,
+    'oa': 5,
+    'interviewing': 6,
+    'offered': 7,
+    'accepted': 8,
+    'rejected': 9,
+    'all': 10 // Fallback for any other status
+  };
+  
   // Form state
   const [formData, setFormData] = useState({
     title: '',
@@ -99,7 +113,10 @@ const Dashboard = () => {
   const handleUpdateInternship = () => {
     if (formData.title.trim() && formData.company.trim() && editIndex !== null) {
       const updatedInternships = [...internships];
-      updatedInternships[editIndex] = { ...formData };
+      updatedInternships[editIndex] = { 
+        ...formData,
+        createdAt: internships[editIndex].createdAt || new Date().toISOString() 
+      };
       setInternships(updatedInternships);
       handleCloseEditModal();
     }
@@ -110,6 +127,44 @@ const Dashboard = () => {
       const filteredInternships = internships.filter((_, i) => i !== index);
       setInternships(filteredInternships);
     }
+  };
+
+  // Helper function to parse dates for comparison
+  const parseDateForComparison = (dateString) => {
+    if (!dateString) return null;
+    
+    // Handle various date formats
+    const monthMap = {
+      'january': 0, 'jan': 0, 'february': 1, 'feb': 1, 'march': 2, 'mar': 2,
+      'april': 3, 'apr': 3, 'may': 4, 'june': 5, 'jun': 5, 'july': 6, 'jul': 6,
+      'august': 7, 'aug': 7, 'september': 8, 'sep': 8, 'sept': 8, 'october': 9, 'oct': 9,
+      'november': 10, 'nov': 10, 'december': 11, 'dec': 11
+    };
+    
+    const parts = dateString.toLowerCase().replace(',', '').split(' ');
+    
+    // Handle formats like "June 2025"
+    if (parts.length === 2) {
+      const month = monthMap[parts[0]];
+      const year = parseInt(parts[1], 10);
+      
+      if (!isNaN(month) && !isNaN(year)) {
+        return new Date(year, month, 1);
+      }
+    }
+    
+    // If parsing fails, try using Date.parse which handles other standard formats
+    const timestamp = Date.parse(dateString);
+    return isNaN(timestamp) ? null : new Date(timestamp);
+  };
+
+  // Helper function to get status priority for sorting
+  const getStatusPriority = (status) => {
+    // Convert status to lowercase and normalize it by removing spaces and special characters
+    const normalizedStatus = (status || "").toLowerCase().replace(/\s+/g, '');
+    
+    // Return the priority or a default high number if not found
+    return statusOrder[normalizedStatus] || 999;
   };
 
   // Filter and sort internships
@@ -128,12 +183,33 @@ const Dashboard = () => {
     })
     .sort((a, b) => {
       switch (sortBy) {
-        case 'date':
-          return new Date(b.createdAt) - new Date(a.createdAt);
+        case 'date': {
+          // Parse and compare start dates
+          const dateA = parseDateForComparison(a.startDate);
+          const dateB = parseDateForComparison(b.startDate);
+          
+          // If both dates are valid, compare them
+          if (dateA && dateB) {
+            return dateA - dateB;
+          }
+          
+          // If only one date is valid, put the one with a date first
+          if (dateA) return -1;
+          if (dateB) return 1;
+          
+          // If neither has a valid start date, fall back to creation date
+          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+        }
         case 'company':
           return a.company.localeCompare(b.company);
-        case 'status':
-          return a.status.localeCompare(b.status);
+        case 'status': {
+          // Use the helper function to determine status priorities
+          const priorityA = getStatusPriority(a.status);
+          const priorityB = getStatusPriority(b.status);
+          
+          // Sort by status priority (lower number = higher priority)
+          return priorityA - priorityB;
+        }
         default:
           return 0;
       }
@@ -166,10 +242,12 @@ const Dashboard = () => {
       all: "bg-gray-100 text-gray-800"
     };
     
-    const displayName = statusDisplayNames[status.toLowerCase()] || status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+    // Normalize status to lowercase and remove spaces for comparison
+    const normalizedStatus = status.toLowerCase().replace(/\s+/g, '');
+    const displayName = statusDisplayNames[normalizedStatus] || status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
     
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusStyles[status.toLowerCase()] || "bg-gray-100 text-gray-800"}`}>
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusStyles[normalizedStatus] || "bg-gray-100 text-gray-800"}`}>
         {displayName}
       </span>
     );
@@ -215,16 +293,16 @@ const Dashboard = () => {
                 onChange={(e) => setFilter(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="All Statuses">All Statuses</option>
-                <option value = "Planning to Apply">Planning to Apply</option>
-                <option value = "Applying">Applying</option>
-                <option value="Applied">Applied</option>
-                <option value = "Phone Call">Phone Call</option>
-                <option value = "Online Assessment">Online Assessment</option>
-                <option value="Interviewing">Interviewing</option>
-                <option value="Offered">Offered</option>
-                <option value="Accepted">Accepted</option>
-                <option value="Rejected">Rejected</option>
+                <option value="all">All Statuses</option>
+                <option value="planningtoapply">Planning to Apply</option>
+                <option value="applying">Applying</option>
+                <option value="applied">Applied</option>
+                <option value="phonecall">Phone Call</option>
+                <option value="oa">Online Assessment</option>
+                <option value="interviewing">Interviewing</option>
+                <option value="offered">Offered</option>
+                <option value="accepted">Accepted</option>
+                <option value="rejected">Rejected</option>
               </select>
               
               <select 
@@ -232,7 +310,7 @@ const Dashboard = () => {
                 onChange={(e) => setSortBy(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="date">Sort by Date</option>
+                <option value="date">Sort by Start Date</option>
                 <option value="company">Sort by Company</option>
                 <option value="status">Sort by Status</option>
               </select>
@@ -401,11 +479,11 @@ const Dashboard = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">All Statuses</option>
-                <option value = "planningtoapply">Planning to Apply</option>
-                <option value = "applying">Applying</option>
+                <option value="planningtoapply">Planning to Apply</option>
+                <option value="applying">Applying</option>
                 <option value="applied">Applied</option>
-                <option value = "phonecall">Phone Call</option>
-                <option value = "oa">Online Assessment</option>
+                <option value="phonecall">Phone Call</option>
+                <option value="oa">Online Assessment</option>
                 <option value="interviewing">Interviewing</option>
                 <option value="offered">Offered</option>
                 <option value="accepted">Accepted</option>
@@ -517,11 +595,11 @@ const Dashboard = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">All Statuses</option>
-                <option value = "planningtoapply">Planning to Apply</option>
-                <option value = "applying">Applying</option>
+                <option value="planningtoapply">Planning to Apply</option>
+                <option value="applying">Applying</option>
                 <option value="applied">Applied</option>
-                <option value = "phonecall">Phone Call</option>
-                <option value = "oa">Online Assessment</option>
+                <option value="phonecall">Phone Call</option>
+                <option value="oa">Online Assessment</option>
                 <option value="interviewing">Interviewing</option>
                 <option value="offered">Offered</option>
                 <option value="accepted">Accepted</option>
